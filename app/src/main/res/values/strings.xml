@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MapApp</string>
+    <string name="show_on_map">Показать на карте</string>
+    <string name="api_key">fe35bed6-6bef-401c-a925-5d12055f65a5</string>
+</resources>
