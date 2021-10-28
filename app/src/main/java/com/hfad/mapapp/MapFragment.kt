@@ -3,16 +3,19 @@ package com.hfad.mapapp
 import android.annotation.SuppressLint
 import android.location.Address
 import android.location.Geocoder
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
@@ -25,20 +28,15 @@ import java.util.*
 class MapFragment : Fragment() {
 
     private lateinit var mapView: MapView
-    private val TARGET_LOCATION = Point(55.751574, 37.573856)
     private var mapObject: MapObject? = null
     private lateinit var confirmView: ConstraintLayout
     private lateinit var addressTxtV: TextView
     private lateinit var geocoder: Geocoder
     private lateinit var addresses: List<Address>
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        /*arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-        }*/
-    }
+    private lateinit var confirmBtn: Button
+    private val addressFragment: AddressFragment = AddressFragment()
+    val args = Bundle()
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,21 +47,49 @@ class MapFragment : Fragment() {
         mapView = root.findViewById(R.id.mapView)
         confirmView = root.findViewById(R.id.constraint_confirm)
         addressTxtV = root.findViewById(R.id.address)
+        confirmBtn = root.findViewById(R.id.confirm_button)
         return root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        val argsCur = this.arguments
+        if (argsCur != null) {
+            val curLat = argsCur.getDouble("keyForCurLat", 55.751574)
+            val curLon = argsCur.getDouble("keyForCurLon", 37.573856)
+            setCameraToPosition(curLat, curLon)
+        } else {
+            getLastLocationFromFused()
+        }
+        getPoint()
+    }
+
+    @SuppressLint("MissingPermission")
+    // на этом экране permission уже получен
+    private fun getLastLocationFromFused() {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                setCameraToPosition(
+                    it.latitude,
+                    it.longitude
+                )
+            }
+        }
+    }
+
+    private fun setCameraToPosition(curLat: Double, curLon: Double) {
+        val TARGET_LOCATION = Point(curLat, curLon)
         mapView.map.move(
             CameraPosition(
                 TARGET_LOCATION,
-                11.0f, 0.0f, 0.0f
+                16.0f, 0.0f, 0.0f
             ),
             Animation(Animation.Type.SMOOTH, 0F),
             null
         )
-        getPoint()
     }
+
 
     private val listener = object : InputListener {
         @SuppressLint("UseCompatLoadingForDrawables")
@@ -73,18 +99,19 @@ class MapFragment : Fragment() {
                 background = requireContext().getDrawable(R.drawable.ic_place_24px)
             }
             val newPoint = Point(point.latitude, point.longitude)
-            Log.i("anya", "onMapTap: ${newPoint.latitude}")
-            mapObject?.let {
-                mapView.map.mapObjects.remove(it)
-            }
+            mapView.map.mapObjects.clear()
             mapObject = addMarker(
                 newPoint.latitude,
                 newPoint.longitude,
                 view
             )
             toggleLoginUI(true)
-            addressTxtV.text = getAddresses(newPoint.latitude, newPoint.longitude)
+            val geoAddress = getAddresses(newPoint.latitude, newPoint.longitude)
+            addressTxtV.text = geoAddress
 
+            args.putString("keyForAddress", geoAddress)
+            args.putString("keyForLat", newPoint.latitude.toString())
+            args.putString("keyForLon", newPoint.longitude.toString())
         }
 
         override fun onMapLongTap(p0: Map, p1: Point) {
@@ -94,12 +121,7 @@ class MapFragment : Fragment() {
     fun getAddresses(lat: Double, lon: Double): String {
         geocoder = Geocoder(requireContext(), Locale.getDefault())
         addresses = geocoder.getFromLocation(lat, lon, 1)
-        /* val city = addresses[0].locality
-        val state = addresses[0].adminArea
-        val country = addresses[0].countryName
-        val postalCode = addresses[0].postalCode
-        val knownName = addresses[0].featureName*/
-        return addresses[0].getAddressLine(0) //address
+        return addresses[0].getAddressLine(0)
     }
 
     fun addMarker(
@@ -113,7 +135,7 @@ class MapFragment : Fragment() {
         )
     }
 
-    fun getPoint() {
+    private fun getPoint() {
         mapView.map.addInputListener(listener)
     }
 
@@ -122,6 +144,16 @@ class MapFragment : Fragment() {
             confirmView.visibility = View.VISIBLE
         } else {
             confirmView.visibility = View.GONE
+        }
+    }
+
+    private fun openFragment(fragment: Fragment) {
+        fragment.arguments = args
+        confirmBtn.setOnClickListener {
+            activity?.supportFragmentManager?.beginTransaction()
+                ?.replace(R.id.activity_main, fragment, "mapFragTag")
+                ?.addToBackStack(null)
+                ?.commit()
         }
     }
 
@@ -135,15 +167,6 @@ class MapFragment : Fragment() {
         super.onStart()
         MapKitFactory.getInstance().onStart()
         mapView.onStart()
+        openFragment(addressFragment)
     }
-
-
-    /* companion object {
-         fun newInstance(param1: String, param2: String) =
-             MapFragment().apply {
-                 arguments = Bundle().apply {
-                     //putString(ARG_PARAM1, param1)
-                 }
-             }
-     }*/
 }

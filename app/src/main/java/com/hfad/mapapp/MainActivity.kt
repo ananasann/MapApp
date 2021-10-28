@@ -1,23 +1,8 @@
 package com.hfad.mapapp
 
-import android.Manifest
-import android.content.ContentResolver
-import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.Settings
-import android.util.Log
-import android.widget.Button
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.yandex.mapkit.MapKitFactory
@@ -34,7 +19,6 @@ class MainActivity : AppCompatActivity() {
         MapKitFactory.initialize(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
-
     }
 
 
@@ -59,10 +43,9 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == locationPermissionCode) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
-            }
-            else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                //Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
             }
         }
     }

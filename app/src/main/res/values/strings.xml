@@ -4,4 +4,8 @@
     <string name="api_key">fe35bed6-6bef-401c-a925-5d12055f65a5</string>
     <string name="address">Адрес точки</string>
     <string name="confirm_address">Подтвердить адрес</string>
+    <string name="selected_address">Выбранный адрес:</string>
+    <string name="latitude">Широта: %1s</string>
+    <string name="longitude">Долгота: %1s</string>
+    <string name="place_img">place_image</string>
 </resources>
