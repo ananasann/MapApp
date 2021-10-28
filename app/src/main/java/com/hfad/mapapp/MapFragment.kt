@@ -1,6 +1,8 @@
 package com.hfad.mapapp
 
 import android.annotation.SuppressLint
+import android.location.Address
+import android.location.Geocoder
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -8,8 +10,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.DrawableRes
+import android.widget.TextView
 import androidx.annotation.RequiresApi
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
@@ -17,12 +20,17 @@ import com.yandex.mapkit.map.*
 import com.yandex.mapkit.map.Map
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.ui_view.ViewProvider
+import java.util.*
 
 class MapFragment : Fragment() {
 
     private lateinit var mapView: MapView
     private val TARGET_LOCATION = Point(55.751574, 37.573856)
     private var mapObject: MapObject? = null
+    private lateinit var confirmView: ConstraintLayout
+    private lateinit var addressTxtV: TextView
+    private lateinit var geocoder: Geocoder
+    private lateinit var addresses: List<Address>
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +47,8 @@ class MapFragment : Fragment() {
     ): View? {
         val root = inflater.inflate(R.layout.fragment_map, container, false)
         mapView = root.findViewById(R.id.mapView)
+        confirmView = root.findViewById(R.id.constraint_confirm)
+        addressTxtV = root.findViewById(R.id.address)
         return root
     }
 
@@ -72,9 +82,24 @@ class MapFragment : Fragment() {
                 newPoint.longitude,
                 view
             )
+            toggleLoginUI(true)
+            addressTxtV.text = getAddresses(newPoint.latitude, newPoint.longitude)
+
         }
+
         override fun onMapLongTap(p0: Map, p1: Point) {
         }
+    }
+
+    fun getAddresses(lat: Double, lon: Double): String {
+        geocoder = Geocoder(requireContext(), Locale.getDefault())
+        addresses = geocoder.getFromLocation(lat, lon, 1)
+        /* val city = addresses[0].locality
+        val state = addresses[0].adminArea
+        val country = addresses[0].countryName
+        val postalCode = addresses[0].postalCode
+        val knownName = addresses[0].featureName*/
+        return addresses[0].getAddressLine(0) //address
     }
 
     fun addMarker(
@@ -92,6 +117,13 @@ class MapFragment : Fragment() {
         mapView.map.addInputListener(listener)
     }
 
+    private fun toggleLoginUI(show: Boolean) {
+        if (show) {
+            confirmView.visibility = View.VISIBLE
+        } else {
+            confirmView.visibility = View.GONE
+        }
+    }
 
     override fun onStop() {
         mapView.onStop()
